@@ -9,6 +9,13 @@ namespace Poker
 {
     class Program
     {
+        //ToDo:
+        //Fixa bets
+        //Ev fixa coolare kort med acci art
+        //Pair plus
+        //Fler spelare
+        //Fråga erik om allt är wäk
+        //
         static void Main(string[] args)
         {
             KortLek kortlek = new KortLek(1);
@@ -283,6 +290,10 @@ namespace Poker
         public Kort Tjuvkika
         {
             get { return kortlek[0]; }
+        }
+        public int AntalKort
+        {
+            get { return kortlek.Count; }
         }
         public int AntalKort
         {
