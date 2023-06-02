@@ -4,28 +4,30 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Threading;
+using System.IO;
 
 namespace Poker
 {
     class Program
     {
-        //ToDo:
-        //Fixa bets
-        //Ev fixa coolare kort med acci art
-        //Pair plus
-        //Fler spelare
-        //Fråga erik om allt är wäk
-        //
+        //Fixa kort med curserpos
+        //Bets buggar
         static void Main(string[] args)
         {
+            #region Variabler och intro saker
+
             KortLek kortlek = new KortLek(1);
-            Console.Write("Hej och välkommen till trekortsPoker\r\nFör att starta skriv ditt namn här:");
+            Console.Write("Hej och välkommen till Tre Korts Poker\r\nFör att starta skriv ditt namn här för att starta: ");
             Spelare Spelare1 = new Spelare(Console.ReadLine());
             Spelare Dealer = new Spelare("Dealer");
-            int spelaresBrahet;
-            int dealersBrahet;
+            double spelaresBrahet;
+            double dealersBrahet;
             int antalSpelare = 2;
-            
+            int bettadeChips = 0;
+            int parPlusBet = 0;
+            bool spela = false;
+            Spelare1.SättInChips(1000); 
+            #endregion
             while (true)
             {
                 Console.Clear();
@@ -38,74 +40,196 @@ namespace Poker
                                                        __/ |
                                                       |___/ ";
                 Console.WriteLine(text);
-                Console.Write("1) Spela spelet\r\n2) Regler(bra om man inte spelat innan)");
+                Console.WriteLine("Du har " + Spelare1.GetChips + " chips");
+                if (Spelare1.GetChips <= 1)
+                {
+                    Console.WriteLine("Du har för lite chips och kan därmed inte spela längre");
+                }
+                Console.Write("1) Spela spelet\r\n2) Regler(bra om man inte spelat innan)\r\n3)Avsluta\r\n");
                 try
-                {                    
+                {
                     int val = int.Parse(Console.ReadLine());
                     Console.Clear();
-                    if (val == 1) //Pokerspelet
+                    if (val == 1 && Spelare1.GetChips > 1) 
                     {
-                        
-                        text = @"  _____      _             
+                        while (true)
+                        {
+                            Console.Clear();
+                            text = @"  _____      _             
  |  __ \    | |            
  | |__) |__ | | _____ _ __ 
  |  ___/ _ \| |/ / _ \ '__|
  | |  | (_) |   <  __/ |   
  |_|   \___/|_|\_\___|_|   
                            ";
-                        Console.WriteLine(text);
-                        #region blanda
-                        if (kortlek.AntalKort < antalSpelare * 3)
-                        {
-                            kortlek.BlandaOm();
-                        }
-                        else
-                        {
-                            kortlek.Blanda();
-                        }
-                        #endregion
-                        for (int i = 0; i < 3; i++)
-                        {
-                            Spelare1.DraKort(kortlek.DraKort());
-                            Dealer.DraKort(kortlek.DraKort());
-                        } // Delar ut kort                        
-                        Spelare1.SoteraHand();
-                        Console.WriteLine("Dina kort:");
-                        Spelare1.KollaHand();
-                        Console.WriteLine("----------\r\nDin \"pokerhand\":");
-                        spelaresBrahet = Spelare1.HurBraHand();
+                            Console.WriteLine(text);
+                            #region blanda
+                            if (kortlek.AntalKort < antalSpelare * 3)
+                            {
+                                kortlek.BlandaOm();
+                            }
+                            else
+                            {
+                                kortlek.Blanda();
+                            }
+                            #endregion
 
-                        Console.ReadLine();
+                            while (true)
+                            {
+                                try
+                                {
+                                    Console.WriteLine("Du har " + Spelare1.GetChips + " chips");
+                                    Console.WriteLine("Maxbet är " + Spelare1.GetChips / 2);
+                                    Console.WriteLine("Vad vill du satsa?:");
+                                    bettadeChips = int.Parse(Console.ReadLine());
+                                    if (bettadeChips <= Spelare1.GetChips / 2)
+                                    {
+                                        Spelare1.BettaChips(bettadeChips);
+                                        break;
+                                    }
+                                    else
+                                    {
+                                        Console.WriteLine("HÖRRÖ så mycket får du inte betta");
+                                    }
+                                }
+                                catch
+                                {
+                                    Console.WriteLine("Ogiltig inmatning");
+                                    Thread.Sleep(1000);
+                                    Console.Clear();
+                                }
+                            }
+                            while (true)
+                            {
+                                try
+                                {
+                                    Console.WriteLine("Du har " + Spelare1.GetChips + " chips kvar");
+                                    Console.WriteLine("Maximala parplus bettet är " + (Spelare1.GetChips - bettadeChips));
+                                    parPlusBet = int.Parse(Console.ReadLine());
+                                    if (parPlusBet <= Spelare1.GetChips - bettadeChips)
+                                    {
+                                        Spelare1.BettaParPlus(parPlusBet);
+                                        break;
+                                    }
+                                    else
+                                    {
+                                        Console.WriteLine("Hörrö du kan inte bett sååå mycket...");
+                                    }
+                                }
+                                catch
+                                {
+                                    Console.WriteLine("Ogiltig inmatning");
+                                    Thread.Sleep(1000);
+                                    Console.Clear();
+                                }
+                            }
+                            for (int i = 0; i < 3; i++)
+                            {
+                                Spelare1.DraKort(kortlek.DraKort());
+                                Dealer.DraKort(kortlek.DraKort());
+                            } // Delar ut kort                        
+                            Spelare1.SoteraHand();
+                            Console.WriteLine(Spelare1.ToString());
+                            Console.WriteLine("----------\r\nDin \"pokerhand\":");
+                            spelaresBrahet = Spelare1.HurBraHand();
+                            Console.WriteLine("Vill du spela handen? (Ja/Nej)");
+                            while (true)
+                            {
+                                spela = false;
+                                string val2 = Console.ReadLine();
+                                if (val2.ToLower() == "ja")
+                                {
+                                    spela = true;
+                                    Spelare1.SpelaHand();
+                                }
+                                break;
+                            }
+                            Dealer.SoteraHand();
+                            Console.WriteLine(Dealer.ToString());
+                            dealersBrahet = Dealer.HurBraHand();
+                            #region Vinnst/Förlust Check
+                            if (dealersBrahet < 12 && spela)
+                            {
+                                Console.WriteLine("Dealern har under D high och spelar inte");
+                                Spelare1.SättInChips(bettadeChips * 4 + parPlusBet * Spelare1.ParPlusMulitplyer());
 
-                        dealersBrahet = Dealer.HurBraHand();
-                        if (dealersBrahet < 12)
-                        {
-                            Console.WriteLine("Dealern har under D high och spelar inte");
+                            }
+                            else if (dealersBrahet == spelaresBrahet && spela)
+                            {
+                                Console.WriteLine("Dealern och du har lika bra hand så det blir oavgjort");
+                                Spelare1.SättInChips(bettadeChips * 2 + parPlusBet * Spelare1.ParPlusMulitplyer());
+                            }
+                            else if (dealersBrahet < spelaresBrahet && spela)
+                            {
+                                Console.WriteLine("Du har bättre kort än dealern så du vinner!");
+                                Spelare1.SättInChips(bettadeChips * 4 + parPlusBet * Spelare1.ParPlusMulitplyer());
+                            }
+                            else if (spela)
+                            {
+                                Console.WriteLine("Du Förlorade...");
+                                Spelare1.SättInChips(parPlusBet * Spelare1.ParPlusMulitplyer());
+                            }
+                            else
+                            {
+                                Console.WriteLine("Du spelade inte och förlorade ditt ursprungliga bett");
+                                Spelare1.SättInChips(parPlusBet * Spelare1.ParPlusMulitplyer());
+                            }
+                            #endregion
+                            Console.WriteLine("Du har nu " + Spelare1.GetChips + " chips");
+                            Dealer.TömHand();
+                            Spelare1.TömHand();
+                            Console.WriteLine("Spela igen? (Ja/Nej)");
+                            string temp = Console.ReadLine();
+                            if (Spelare1.GetChips <= 1)
+                            {
+                                break;
+                            }
+                            else if (temp.ToLower() == "ja")
+                            {
+
+                            }
+                            else
+                            {
+                                break;
+                            }
                         }
-                        else if (dealersBrahet == spelaresBrahet)
-                        {
-                            Console.WriteLine("Dealern och du har lika bra hand så det blir oavgjort");
-                        }
-                        else if (dealersBrahet < spelaresBrahet)
-                        {
-                            Console.WriteLine("Du har bättre kort än dealern så du vinner!");
-                        }
-                        else
-                        {
-                            Console.WriteLine("Du Förlorade...");
-                        }
-                        Dealer.TömHand();
-                        Spelare1.TömHand();
-                        Console.ReadLine();
-                    }
+                    } //Pokerspelet
                     if (val == 2) //Regler
                     {
+                        Console.WriteLine(@"Välkommen till Gustavs trekorts poker. 
+I detta spel kommer du få möjligheten att satsa dina hårt intjänade pengar på ett riggat spel.
+Du kommer att få börja med att lägga ett bet innan dina kort. Sedan när du får se dina kort kommer du få välja att dubbla din insättning
+för en chans att få se dealerns kort. Om du dock känner att dina kort är för dåliga kan du lägga handen men din först insättning går förlorad.
+Om du väljer att spela och du har en bättre hand än dealern eller som dealers bästa kort är under drottning vinner du tillbaka dubbla din instättning. 
 
-                    }
-                    else
+Olika händer förklaring från bäst till sämst:
+Straight Flush : Att du har 3 kort i följd som också är av samma färg.
+Tree of a kind : Att du har 3 kort av samma valör.
+Straight : Att du har 3 kort i följd.
+Flush : Att alla dina kort är av samma färg
+Pair : Du har två kort som är av samma valör
+High Cards : Har du ingen av överstående får du highcard på ditt bästa kort. Highcards prioriteras från 2-E där E är bäst.
+
+Du kommer även få möjliheten att lägga pengar på par plus. Om din hand blir ett par eller bättre har du möjligheten att få på ditt 
+sidbet och den betals ut även om du vinner eller förlorar handen. 
+
+Multiplikations Sheet Par Plus:
+Straight Flush : 40x
+Three of a kind : 30x
+Straight : 6x
+Flush : 3x
+Pair : 1x
+High Cards : 0x
+
+Lycka till. 
+
+Klicka enter för att fortsätta");//Relger
+                        Console.ReadLine();
+                    } //Regler
+                    if (val == 3)
                     {
-
-                    }
+                        break;
+                    } //Avsluta                    
                 }
                 catch
                 {
@@ -115,11 +239,6 @@ namespace Poker
 
         }
     }
-
-
-
-
-
     enum Färg
     {
         Hjärter = 1,
@@ -186,7 +305,7 @@ namespace Poker
         {
             get { return ValörFix(valör); }
         }
-        public int ValörNummer
+        public double ValörNummer
         {
             get { return valör; }
         }
@@ -205,6 +324,7 @@ namespace Poker
         //medlemsvariabler
         List<Kort> kortlek = new List<Kort>();
         int antalKortlekar = 1; //1-oändligt
+        double chips;
         Random rnd = new Random();
         //konstruktor
         public KortLek(int ak) // bygger kortlek med valfri antal kortleker
@@ -280,7 +400,6 @@ namespace Poker
             kortlek.RemoveAt(0);
             return returVärde;
         }
-
         //ToString 
         public override string ToString()
         {
@@ -295,69 +414,23 @@ namespace Poker
         {
             get { return kortlek.Count; }
         }
-        public int AntalKort
-        {
-            get { return kortlek.Count; }
-        }
     }
-    #region wip
-    class AntalChips
-    {
-        string kontoNamn;
-        int pengar;
-        public AntalChips(string n)
-        {
-            kontoNamn = n;
-        }
-        public void SättaIn(int p)
-        {
-            if (p < 0)
-            {
-                pengar += p;
-            }
-        }
-        public void Betta(int p)
-        {
-            if (p < pengar)
-            {
-                pengar -= p;
-            }
-            else
-            {
-            }
-        }
-        public void PairPlus(int p)
-        {
-            pengar -= p;
-            if (true)
-            {
-
-            }
-        }
-        public void KollaSaldo()
-        {
-            Console.WriteLine("Du har " + pengar + " chips");
-        }
-        public override string ToString()
-
-        {
-            return kontoNamn + " har " + pengar + " chips";
-        }
-
-    }
-    #endregion
     class Spelare
     {
         //medlemsvariabler
         string namn;
         List<Kort> hand = new List<Kort>();
-        int chips;
+        int chips = 0;
+        int bettadeChips = 0;
+        int parPlus = 0;
+        double brahet = 0;
+
         //konstruktro
         public Spelare(string n)
         {
             namn = n;
         }
-        //Metoder
+        //Metoder med handen
         public void DraKort(Kort kort)
         {
             hand.Add(kort);
@@ -379,7 +452,153 @@ namespace Poker
                 }
             }
         }
-        public void KollaHand()
+        public void SoteraHand()
+        {
+            hand.Sort((item1, item2) =>
+            {
+                int enumComparison = item1.ValörNummer.CompareTo(item2.ValörNummer);
+
+                if (enumComparison != 0)
+                {
+                    return enumComparison;
+                }
+                else
+                {
+                    return item1.Färg.CompareTo(item2.Färg);
+                }
+            }); //Lånad från internet, över min lönegrad
+        }
+        public double HurBraHand()
+        {
+            if (hand[0].Färg == hand[1].Färg && hand[0].Färg == hand[2].Färg)
+            {
+                if (hand[0].ValörNummer + 1 == hand[1].ValörNummer && hand[0].ValörNummer + 2 == hand[2].ValörNummer)
+                {
+                    Console.WriteLine("Straight Flush");
+                    brahet = 19 + (hand[hand.Count - 1].ValörNummer / 100);
+                }
+                else
+                {
+                    Console.WriteLine("Flush");
+                    brahet = 16 + (hand[hand.Count - 1].ValörNummer / 100);
+                }
+            }
+            else if (hand[0].ValörNummer == hand[1].ValörNummer && hand[0].ValörNummer == hand[2].ValörNummer)
+            {
+                Console.WriteLine("Three of a kind");
+                brahet = 18 + (hand[hand.Count - 1].ValörNummer / 100);
+            }
+            else if (hand[0].ValörNummer + 1 == hand[1].ValörNummer && hand[0].ValörNummer + 2 == hand[2].ValörNummer)
+            {
+                Console.WriteLine("Straight");
+                brahet = 17 + (hand[hand.Count - 1].ValörNummer / 100);
+            }
+            else if (hand[0].ValörNummer == hand[1].ValörNummer || hand[0].ValörNummer == hand[2].ValörNummer || hand[1].ValörNummer == hand[2].ValörNummer)
+            {
+                Console.WriteLine("Pair");
+                brahet = 15 + (hand[hand.Count - 2].ValörNummer / 100);
+            }
+            else
+            {
+                Console.WriteLine(hand[2].Valör + " High");
+                brahet = hand[2].ValörNummer;
+            }
+            return brahet;
+        }
+        public double HurBraHandHemlig()
+        {
+            double brahet;
+            if (hand[0].Färg == hand[1].Färg && hand[0].Färg == hand[2].Färg)
+            {
+                if (hand[0].Valör + 1 == hand[1].Valör && hand[0].Valör + 2 == hand[2].Valör)
+                {
+                    brahet = 19;
+                }
+                else
+                {
+                    brahet = 16;
+                }
+            }
+            else if (hand[0].Valör == hand[1].Valör && hand[0].Valör == hand[2].Valör)
+            {
+                brahet = 18;
+            }
+            else if (hand[0].Valör + 1 == hand[1].Valör && hand[0].Valör + 2 == hand[2].Valör)
+            {
+                brahet = 17;
+            }
+            else if (hand[0].Valör == hand[1].Valör || hand[0].Valör == hand[2].Valör || hand[1].Valör == hand[2].Valör)
+            {
+                brahet = 15;
+            }
+            else
+            {
+                brahet = hand[2].ValörNummer;
+            }
+            return brahet;
+        }
+        public void TömHand()
+        {
+            hand.Clear();
+        }
+        //Metoder med chipsen
+        public void SättInChips(int c)
+        {
+            chips += c;
+        }
+        public void BettaChips(int c)
+        {
+            if (chips / 2 >= c)
+            {
+                chips -= c;
+                bettadeChips = c;
+            }
+            else
+            {
+                Console.WriteLine("Du har för lite chips för att spela så mycket");
+            }
+        }
+        public void SpelaHand()
+        {
+            chips -= bettadeChips;
+        }
+        public void BettaParPlus(int c)
+        {
+            chips -= c;
+            parPlus = c;
+        }
+        public int ParPlusMulitplyer()
+        {
+
+            int ParPlusMult = 0;
+            //Straight Flush
+            if (brahet >= 19 && brahet < 20 )
+            {
+                ParPlusMult = 40;
+            }            
+            //Three of a kind
+            if (brahet >= 18 && brahet < 19)
+            {
+                ParPlusMult = 30;
+            }
+            //Straight
+            if (brahet >= 17 && brahet < 18)
+            {
+                ParPlusMult = 6;
+            }
+            //Flush
+            if (brahet >= 16 && brahet < 17)
+            {
+                ParPlusMult = 3;
+            }
+            //Pair
+            if (brahet >= 15 && brahet<16)
+            {
+                ParPlusMult = 1;
+            }
+            return ParPlusMult;
+        }
+        public override string ToString()
         {
             string handkort = "";
             string mellandel = "";
@@ -473,111 +692,15 @@ namespace Poker
             {
                 handkort += @"`------'";
             }
-            Console.WriteLine(namn + "'s hand:");
-            Console.WriteLine(handkort);
-        }
-        public void SoteraHand()
-        {
-            hand.Sort((item1, item2) =>
-            {
-                int enumComparison = item1.ValörNummer.CompareTo(item2.ValörNummer);
-
-                if (enumComparison != 0)
-                {
-                    return enumComparison;
-                }
-                else
-                {
-                    return item1.Färg.CompareTo(item2.Färg);
-                }
-            }); //Lånad från internet, över min lönegrad
-        }
-        public int HurBraHand()
-        {
-            int brahet;
-            if (hand[0].Färg == hand[1].Färg && hand[0].Färg == hand[2].Färg)
-            {
-                if (hand[0].Valör + 1 == hand[1].Valör && hand[0].Valör + 2 == hand[2].Valör)
-                {
-                    Console.WriteLine("Straight Flush");
-                    brahet = 19;
-                }
-                else
-                {
-                    Console.WriteLine("Flush");
-                    brahet = 16;
-                }
-            }
-            else if (hand[0].Valör == hand[1].Valör && hand[0].Valör == hand[2].Valör)
-            {
-                Console.WriteLine("Three of a kind");
-                brahet = 18;
-            }
-            else if (hand[0].Valör + 1 == hand[1].Valör && hand[0].Valör + 2 == hand[2].Valör)
-            {
-                Console.WriteLine("Straight");
-                brahet = 17;
-            }
-            else if (hand[0].Valör == hand[1].Valör || hand[0].Valör == hand[2].Valör || hand[1].Valör == hand[2].Valör)
-            {
-                Console.WriteLine("Pair");
-                brahet = 15;
-            }
-            else
-            {
-                Console.WriteLine(hand[2].Valör + " High");
-                brahet = hand[2].ValörNummer;
-            }
-            return brahet;
-        }
-        public int HurBraHandHemlig()
-        {
-            int brahet;
-            if (hand[0].Färg == hand[1].Färg && hand[0].Färg == hand[2].Färg)
-            {
-                if (hand[0].Valör + 1 == hand[1].Valör && hand[0].Valör + 2 == hand[2].Valör)
-                {
-                    brahet = 19;
-                }
-                else
-                {
-                    brahet = 16;
-                }
-            }
-            else if (hand[0].Valör == hand[1].Valör && hand[0].Valör == hand[2].Valör)
-            {
-                brahet = 18;
-            }
-            else if (hand[0].Valör + 1 == hand[1].Valör && hand[0].Valör + 2 == hand[2].Valör)
-            {
-                brahet = 17;
-            }
-            else if (hand[0].Valör == hand[1].Valör || hand[0].Valör == hand[2].Valör || hand[1].Valör == hand[2].Valör)
-            {
-                brahet = 15;
-            }
-            else
-            {
-                brahet = hand[2].ValörNummer;
-            }
-            return brahet;
-        }
-        public void TömHand()
-        {
-            hand.Clear();
-        }
-        public override string ToString()
-        {
-            string helahand = "";
-            foreach (Kort kort in hand)
-            {
-                helahand += kort.ToString() + ", ";
-            }
-            return helahand;
+            return handkort;
         }
         public List<Kort> GetHand
         {
             get { return hand; }
+        }
+        public double GetChips
+        {
+            get { return chips; }
         }
     }
 }
