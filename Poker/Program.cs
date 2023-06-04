@@ -22,13 +22,15 @@ namespace Poker
             int bettadeChips = 0;
             int parPlusBet = 0;
             bool spela = false;
+            bool förstaSpelet = true;
             bool baraFunka = false;
             Spelare Spelare1 = new Spelare("test");
             Spelare Dealer = new Spelare("Dealer");
             #endregion
             #region Sparnings Makapärer
-            try
+            try 
             {
+                #region Utskrift
                 string text = @"  _               _     _       
  | |             | |   | |      
  | |     __ _  __| | __| | __ _ 
@@ -51,9 +53,10 @@ namespace Poker
                 {
                     Console.WriteLine($"({i + 1}) " + namn[i]);
                 }
-                Console.Write("Skriv det nummer som korresponderar med ditt namn eller skriv \"0\" för att skapa en ny save: ");
+                Console.Write("Skriv det nummer som korresponderar med ditt namn eller skriv \"0\" för att skapa en ny save: "); 
+                #endregion
                 int val2 = int.Parse(Console.ReadLine());
-                if (val2 != 0)
+                if (val2 != 0) //ladda gammal save
                 {
                     using (StreamReader reader = new StreamReader($"C:\\Namn\\{namn[val2 - 1]}.txt"))
                     {
@@ -61,15 +64,16 @@ namespace Poker
                         Spelare1.SättInChips(int.Parse(reader.ReadLine()));
                     }
                     baraFunka = true;
+                    förstaSpelet = false;
                 }
-                else
+                else //Kör catch
                 {
                     throw new Exception();
                 }
             }
-            catch (Exception)
+            catch (Exception) //Skapa ny save
             {
-                Directory.CreateDirectory(@"C:\Namn");
+                Directory.CreateDirectory(@"C:\Namn"); //Skapar en mapp till savesen om det inte redan finns en.
                 if (!baraFunka)
                 {
                     string text = @"   _____ _                     
@@ -82,7 +86,7 @@ namespace Poker
                   |_|  ";
                     Console.Clear();
                     Console.WriteLine(text);
-                    Console.Write("Hej och välkommen till Tre Korts Poker, här är målet att få så mycket chips som möjligt för pengar är makt osv\r\nFör att starta skriv ditt namn här: ");
+                    Console.Write("Hej och välkommen till Trekortspoker, här är målet att få så mycket chips som möjligt för pengar är makt osv\r\nFör att starta skriv ditt namn här: ");
                     string namn = Console.ReadLine();
                     Spelare1.SetNamn(namn);
                     Spelare1.SättInChips(1000);
@@ -91,9 +95,11 @@ namespace Poker
                         writer.WriteLine(namn);
                     }
                 }
-            }  
+            }
+            StreamWriter sw = new StreamWriter($"C:\\Namn\\{Spelare1.GetNamn}.txt");
+            sw.WriteLine(Spelare1.GetChips);
+            sw.Close();
             #endregion
-            
             while (true)
             {
                 Console.Clear();
@@ -107,14 +113,25 @@ namespace Poker
                                                       |___/ ";
                 Console.WriteLine(text);
                 Console.WriteLine("Du har " + Spelare1.GetChips + " chips");
-                if (Spelare1.GetChips <= 1)
+                if (Spelare1.GetChips <= 1) //Testar om man är pank eller ej
                 {
                     Console.WriteLine("Du har för lite chips och kan därmed inte spela längre");
                 }
-                Console.Write("1) Spela spelet\r\n2) Regler(bra om man inte spelat innan)\r\n3)Avsluta\r\n");
+                Console.Write("1) Spela spelet\r\n2) Regler(bra om man inte spelat innan)\r\n3) Avsluta och spara\r\nVälj 1, 2 eller 3 och klicka enter: ");
                 try
                 {
-                    int val = int.Parse(Console.ReadLine());
+                    int val;
+                    #region Tvinga in i Regler första gången
+                    if (!baraFunka)
+                    {
+                        val = 2;
+                        baraFunka = true;
+                    }
+                    else
+                    {
+                        val = int.Parse(Console.ReadLine());
+                    } 
+                    #endregion
                     Console.Clear();
                     if (val == 1 && Spelare1.GetChips > 1) 
                     {
@@ -139,23 +156,44 @@ namespace Poker
                                 kortlek.Blanda();
                             }
                             #endregion
-
                             while (true)
                             {
+                                if (förstaSpelet)
+                                {
+                                    Console.WriteLine("Välkommen till poker,\r\nHär kör du mot dealern och det första du kommer göra är att välja hur många chips du vill betta på din hand.\r\nDetta görs innan man fått se handen för att huset ska ha en fördel");
+                                } // Guide
                                 try
                                 {
                                     Console.WriteLine("Du har " + Spelare1.GetChips + " chips");
                                     Console.WriteLine("Maxbet är " + Spelare1.GetChips / 2);
                                     Console.WriteLine("Vad vill du satsa?:");
-                                    bettadeChips = int.Parse(Console.ReadLine());
-                                    if (bettadeChips <= Spelare1.GetChips / 2)
+                                    string temp1 = Console.ReadLine();
+                                    if (temp1 == "")
+                                    {
+                                        bettadeChips = 0;
+                                    }
+                                    else
+                                    {
+                                        bettadeChips = int.Parse(temp1);
+                                    }
+                                    if (bettadeChips <= Spelare1.GetChips / 2 && bettadeChips != 0)
                                     {
                                         Spelare1.BettaChips(bettadeChips);
                                         break;
                                     }
+                                    else if (bettadeChips == 0)
+                                    {
+                                        Console.WriteLine("Du kan inte betta 0");
+                                        Thread.Sleep(1000);
+                                        Console.Clear();
+                                        Console.WriteLine(text);
+                                    }
                                     else
                                     {
                                         Console.WriteLine("HÖRRÖ så mycket får du inte betta");
+                                        Thread.Sleep(1000);
+                                        Console.Clear();
+                                        Console.WriteLine(text);
                                     }
                                 }
                                 catch
@@ -163,15 +201,28 @@ namespace Poker
                                     Console.WriteLine("Ogiltig inmatning");
                                     Thread.Sleep(1000);
                                     Console.Clear();
+                                    Console.WriteLine(text);
                                 }
-                            }
+                            } //Bets
                             while (true)
                             {
+                                if (förstaSpelet)
+                                {
+                                    Console.WriteLine("Nu är det dags för par plus,\r\nOm du inte har läst reglerna kanske du inte bettar här eftersom det är lite kompicerat\r\nHar du läst reglerna vet du att par plus är bet på att du får ex flush\r\nDessa bet kan ge mycket pengar om du har tur");
+                                } //Guide
                                 try
                                 {
                                     Console.WriteLine("Du har " + Spelare1.GetChips + " chips kvar");
                                     Console.WriteLine("Maximala parplus bettet är " + (Spelare1.GetChips - bettadeChips));
-                                    parPlusBet = int.Parse(Console.ReadLine());
+                                    string temp1 = Console.ReadLine();
+                                    if (temp1 == "")
+                                    {
+                                        parPlusBet = 0;
+                                    }
+                                    else
+                                    {
+                                        parPlusBet = int.Parse(temp1);
+                                    }
                                     if (parPlusBet <= Spelare1.GetChips - bettadeChips)
                                     {
                                         Spelare1.BettaParPlus(parPlusBet);
@@ -188,13 +239,21 @@ namespace Poker
                                     Thread.Sleep(1000);
                                     Console.Clear();
                                 }
-                            }
+                            } //Par Plus
                             for (int i = 0; i < 3; i++)
                             {
                                 Spelare1.DraKort(kortlek.DraKort());
                                 Dealer.DraKort(kortlek.DraKort());
-                            } // Delar ut kort                        
+                            } // Delar ut kort                       
+                            
+                            Console.Clear();
+                            if (förstaSpelet)
+                            {
+                                Console.WriteLine("Här kan du se din hand, den har kort i sig.\r\nDessa kort är olika bra och om du vill se ordningen på 'brahet' kan du kolla i reglerna\r\nVäljer du att spela handen kommer du dubbla ditt bet\r\nOm du vinner får du dubbelt av allt du bettat");
+                                förstaSpelet = false;
+                            } //Guide
                             Spelare1.SoteraHand();
+                            #region Utskrift
                             Console.WriteLine(Spelare1.ToString());
                             Console.WriteLine("----------\r\nDin \"pokerhand\":");
                             spelaresBrahet = Spelare1.HurBraHand();
@@ -208,11 +267,19 @@ namespace Poker
                                     spela = true;
                                     Spelare1.SpelaHand();
                                 }
+                                else if (val2.ToLower() == "j")
+                                {
+                                    spela = true;
+                                    Spelare1.SpelaHand();
+                                }
                                 break;
                             }
                             Dealer.SoteraHand();
+                            Console.WriteLine("Dealers kort:");
                             Console.WriteLine(Dealer.ToString());
-                            dealersBrahet = Dealer.HurBraHand();
+                            Console.WriteLine("Dealers hand:");
+                            dealersBrahet = Dealer.HurBraHand(); 
+                            #endregion
                             #region Vinnst/Förlust Check
                             if (dealersBrahet < 12 && spela)
                             {
@@ -244,6 +311,7 @@ namespace Poker
                             Console.WriteLine("Du har nu " + Spelare1.GetChips + " chips");
                             Dealer.TömHand();
                             Spelare1.TömHand();
+                            #region Spela Igen?
                             Console.WriteLine("Spela igen? (Ja/Nej)");
                             string temp = Console.ReadLine();
                             if (Spelare1.GetChips <= 1)
@@ -257,7 +325,8 @@ namespace Poker
                             else
                             {
                                 break;
-                            }
+                            } 
+                            #endregion
                         }
                     } //Pokerspelet
                     if (val == 2) //Regler
@@ -294,20 +363,19 @@ Klicka enter för att fortsätta");//Relger
                     } //Regler
                     if (val == 3)
                     {
-                        StreamWriter sw = new StreamWriter($"C:\\Namn\\{Spelare1.GetNamn}.txt");
-                        sw.WriteLine(Spelare1.GetChips);
-                        sw.Close();
+                        StreamWriter sw2 = new StreamWriter($"C:\\Namn\\{Spelare1.GetNamn}.txt");
+                        sw2.WriteLine(Spelare1.GetChips);
+                        sw2.Close();
                         Console.WriteLine("Sparar...");
                         Thread.Sleep(1000);
                         break;
-                    } //Avsluta                    
+                    } //Avsluta
                 }
                 catch
                 {
                     Console.WriteLine("Otillåten inmatning...");
                 }
-            }
-
+            } //Programmet
         }
     }
     enum Färg
