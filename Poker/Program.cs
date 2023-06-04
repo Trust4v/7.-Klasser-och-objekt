@@ -10,24 +10,90 @@ namespace Poker
 {
     class Program
     {
-        //Fixa kort med curserpos
-        //Bets buggar
+        //Erik, detta program kommer skapa en filmmap i C:\\ med namnet "Namn" och kräver därför administrator för att funka.
+        //Förslagsvis plockar du bort filen efter du är klar eftersom det bara tar upp plats.
         static void Main(string[] args)
         {
-            #region Variabler och intro saker
-
+            #region Variabler
             KortLek kortlek = new KortLek(1);
-            Console.Write("Hej och välkommen till Tre Korts Poker\r\nFör att starta skriv ditt namn här för att starta: ");
-            Spelare Spelare1 = new Spelare(Console.ReadLine());
-            Spelare Dealer = new Spelare("Dealer");
             double spelaresBrahet;
             double dealersBrahet;
             int antalSpelare = 2;
             int bettadeChips = 0;
             int parPlusBet = 0;
             bool spela = false;
-            Spelare1.SättInChips(1000); 
+            bool baraFunka = false;
+            Spelare Spelare1 = new Spelare("test");
+            Spelare Dealer = new Spelare("Dealer");
             #endregion
+            #region Sparnings Makapärer
+            try
+            {
+                string text = @"  _               _     _       
+ | |             | |   | |      
+ | |     __ _  __| | __| | __ _ 
+ | |    / _` |/ _` |/ _` |/ _` |
+ | |___| (_| | (_| | (_| | (_| |
+ |______\__,_|\__,_|\__,_|\__,_|
+                                ";
+                Console.WriteLine(text);
+                List<string> namn = new List<string>();
+                using (StreamReader reader = new StreamReader(@"C:\Namn\namn.txt"))
+                {
+                    while (!reader.EndOfStream)
+                    {
+                        string line = reader.ReadLine();
+                        namn.Add(line);
+                    }
+                }
+                Console.WriteLine("De sparade namnen är:");
+                for (int i = 0; i < namn.Count; i++)
+                {
+                    Console.WriteLine($"({i + 1}) " + namn[i]);
+                }
+                Console.Write("Skriv det nummer som korresponderar med ditt namn eller skriv \"0\" för att skapa en ny save: ");
+                int val2 = int.Parse(Console.ReadLine());
+                if (val2 != 0)
+                {
+                    using (StreamReader reader = new StreamReader($"C:\\Namn\\{namn[val2 - 1]}.txt"))
+                    {
+                        Spelare1.SetNamn(namn[val2 - 1]);
+                        Spelare1.SättInChips(int.Parse(reader.ReadLine()));
+                    }
+                    baraFunka = true;
+                }
+                else
+                {
+                    throw new Exception();
+                }
+            }
+            catch (Exception)
+            {
+                Directory.CreateDirectory(@"C:\Namn");
+                if (!baraFunka)
+                {
+                    string text = @"   _____ _                     
+  / ____| |                    
+ | (___ | | ____ _ _ __   __ _ 
+  \___ \| |/ / _` | '_ \ / _` |
+  ____) |   < (_| | |_) | (_| |
+ |_____/|_|\_\__,_| .__/ \__,_|
+                  | |          
+                  |_|  ";
+                    Console.Clear();
+                    Console.WriteLine(text);
+                    Console.Write("Hej och välkommen till Tre Korts Poker, här är målet att få så mycket chips som möjligt för pengar är makt osv\r\nFör att starta skriv ditt namn här: ");
+                    string namn = Console.ReadLine();
+                    Spelare1.SetNamn(namn);
+                    Spelare1.SättInChips(1000);
+                    using (StreamWriter writer = new StreamWriter(@"C:\Namn\namn.txt", true))
+                    {
+                        writer.WriteLine(namn);
+                    }
+                }
+            }  
+            #endregion
+            
             while (true)
             {
                 Console.Clear();
@@ -228,6 +294,11 @@ Klicka enter för att fortsätta");//Relger
                     } //Regler
                     if (val == 3)
                     {
+                        StreamWriter sw = new StreamWriter($"C:\\Namn\\{Spelare1.GetNamn}.txt");
+                        sw.WriteLine(Spelare1.GetChips);
+                        sw.Close();
+                        Console.WriteLine("Sparar...");
+                        Thread.Sleep(1000);
                         break;
                     } //Avsluta                    
                 }
@@ -252,13 +323,14 @@ Klicka enter för att fortsätta");//Relger
         int valör; //2-E
         Färg färg; //"ruter"
         bool ärUppvärd; //True/False
-        //Kompilator
+        //konstruktror
         public Kort(Färg f, int v, bool U)
         {
             valör = v;
             färg = f;
             ärUppvärd = U;
         }
+        //Metoder
         private string ValörFix(int v)
         {
             if (v == 11)
@@ -301,6 +373,7 @@ Klicka enter för att fortsätta");//Relger
                 return "*Nedåtvänd*";
             }
         }
+        //Egenskaper
         public string Valör
         {
             get { return ValörFix(valör); }
@@ -324,10 +397,9 @@ Klicka enter för att fortsätta");//Relger
         //medlemsvariabler
         List<Kort> kortlek = new List<Kort>();
         int antalKortlekar = 1; //1-oändligt
-        double chips;
         Random rnd = new Random();
         //konstruktor
-        public KortLek(int ak) // bygger kortlek med valfri antal kortleker
+        public KortLek(int ak)
         {
             antalKortlekar = ak;
             for (int y = 0; y < ak; y++)
@@ -341,7 +413,7 @@ Klicka enter för att fortsätta");//Relger
                     }
                 }
             }
-        }
+        } // bygger kortlek med valfri antal kortleker
         //Metoder
         public void Blanda()
         {
@@ -355,7 +427,7 @@ Klicka enter för att fortsätta");//Relger
                 kortlek[n] = temp;
             }
         } //Blandar om med de korten som i nuläget finns i kortleken
-        public void BlandaOm() //Lägger till alla korten igen och blandar om
+        public void BlandaOm()
         {
             kortlek.Clear();
             for (int y = 0; y < antalKortlekar; y++)
@@ -378,14 +450,14 @@ Klicka enter för att fortsätta");//Relger
                 kortlek[k] = kortlek[n];
                 kortlek[n] = temp;
             }
-        }
-        public void SkrivUt() //Skriver ut resterande kort i leken
+        } //Lägger till alla korten igen och blandar om
+        public void SkrivUt()
         {
             foreach (Kort kort in kortlek)
             {
                 Console.WriteLine(kort);
             }
-        }
+        } //Skriver ut resterande kort i leken
         internal Kort DraKort()
         {
             kortlek.ElementAt(0).VändKort(true);
@@ -400,7 +472,6 @@ Klicka enter för att fortsätta");//Relger
             kortlek.RemoveAt(0);
             return returVärde;
         }
-        //ToString 
         public override string ToString()
         {
             return "Kortleken innehåller " + kortlek.Count + " kort just nu.";
@@ -418,15 +489,18 @@ Klicka enter för att fortsätta");//Relger
     class Spelare
     {
         //medlemsvariabler
-        string namn;
+        string namn; //"Gustav"
         List<Kort> hand = new List<Kort>();
-        int chips = 0;
-        int bettadeChips = 0;
-        int parPlus = 0;
-        double brahet = 0;
-
-        //konstruktro
+        int chips = 0; //0-oändligt
+        int bettadeChips = 0; //Senast bettade chips
+        int parPlus = 0; //Parplus bet
+        double brahet = 0; //2-19
+        //konstruktror
         public Spelare(string n)
+        {
+            namn = n;
+        }
+        public void SetNamn(string n)
         {
             namn = n;
         }
@@ -694,6 +768,7 @@ Klicka enter för att fortsätta");//Relger
             }
             return handkort;
         }
+        //Egenskaper
         public List<Kort> GetHand
         {
             get { return hand; }
@@ -701,6 +776,10 @@ Klicka enter för att fortsätta");//Relger
         public double GetChips
         {
             get { return chips; }
+        }
+        public string GetNamn
+        {
+            get { return namn; }
         }
     }
 }
